@@ -13,6 +13,26 @@ void change_dir(char *path) {
     }
 }
 
+int detectPipe(char *command) {
+    int count = 0;
+    for (int i = 0; command[i] != '\0'; i++) {
+        if (command[i] == '|') {
+            count++;
+        }
+    }
+    return count;
+}
+
+void tokeniseCommands(char *command, char **commands) {
+    char *token = strtok(command, "|");
+    int i = 0;
+    while (token != NULL) {
+        commands[i] = token;
+        token = strtok(NULL, "|");
+        i++;
+    }
+}
+
 void exec_cmd(char *command) {
     char *args[MAX_CMD_LEN/2 + 1];
     pid_t pid;
@@ -65,6 +85,8 @@ void exec_cmd(char *command) {
     }
 }
 
+//Plan: Split command through | and store in a list of commands. Iterate through list using a for loop and execute each command.
+
 
 int main() {
     char command[MAX_CMD_LEN];
@@ -74,7 +96,17 @@ int main() {
             break;
         }
 
-        exec_cmd(command);
+        int pipes = detectPipe(command);
+        int cmds = pipes + 1;
+        char **commands = malloc(cmds * sizeof(char *));
+
+        tokeniseCommands(command, commands);
+        
+        for (int i = 0; i < cmds; i++) {
+            exec_cmd(commands[i]);
+        }
+        
+        free(commands);
     }
 
     return 0;
