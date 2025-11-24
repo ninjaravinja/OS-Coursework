@@ -13,7 +13,7 @@ static char **dynamicArray(char **array, int *counter, const char *word) {
 	return newArray;
 }
 
-static int sortNAmes(const void *a, const void *b) {
+static int sortNames(const void *a, const void *b) {
 	const char *const *left = a;
 	const char *const *right = b;
 	return strcmp(*left, *right);

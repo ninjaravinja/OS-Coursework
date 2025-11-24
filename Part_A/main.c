@@ -63,16 +63,12 @@ int exec_cmd(char *command, int inputFd, bool next) {
     }
 
     if (args[0] != NULL && strcmp(args[0], "cd") == 0) {
-        if (args[1] != NULL) {
-            change_dir(args[1]);
+        if (args[1] == NULL) {
+            change_dir("/home");
         }
-        else {
-            char curr_dir[MAX_CMD_LEN];
-            if (getcwd(curr_dir, sizeof(curr_dir)) != NULL) {
-                printf("%s\n", curr_dir);
-            }
-            else {
-                perror("getcwd failed");
+        else if (strchr(args[1],'|') == NULL) {
+            if (args[1] != NULL) {
+                change_dir(args[1]);
             }
         }
         return outputFd;
@@ -119,8 +115,12 @@ int exec_cmd(char *command, int inputFd, bool next) {
 
 int main() {
     char command[MAX_CMD_LEN];
+    char pwd[1024];
 
     while (true) {
+        getcwd(pwd, sizeof(pwd));
+
+        printf("%s >> ", pwd);
         if (fgets(command, MAX_CMD_LEN, stdin) == NULL) {
             break;
         }
@@ -130,13 +130,13 @@ int main() {
         char **commands = malloc(cmds * sizeof(char *));
 
         tokeniseCommands(command, commands);
-        
+
         int prevFd = -1;
         for (int i = 0; i < cmds; i++) {
             bool next = (i < cmds - 1);
             prevFd = exec_cmd(commands[i], prevFd, next);
         }
-        
+
         free(commands);
     }
 
