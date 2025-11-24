@@ -116,8 +116,6 @@ int exec_cmd(char *command, int inputFd, bool next) {
     return outputFd;
 }
 
-//Plan: Split command through | and store in a list of commands. Iterate through list using a for loop and execute each command.
-
 
 int main() {
     char command[MAX_CMD_LEN];
