@@ -33,6 +33,18 @@ void tokeniseCommands(char *command, char **commands) {
     }
 }
 
+void removeCD(char **commands, int cmds){
+    for (int i = 0; i < cmds; i++) {
+        if (strcmp(commands[i], "cd") == 0) {
+            for (int j = i; j < cmds - 1; j++) {
+                commands[j] = commands[j + 1];
+            }
+            cmds--;
+            break;
+        }
+    }
+}
+
 int exec_cmd(char *command, int inputFd, bool next) {
     char *args[MAX_CMD_LEN/2 + 1];
     pid_t pid;
@@ -63,12 +75,16 @@ int exec_cmd(char *command, int inputFd, bool next) {
     }
 
     if (args[0] != NULL && strcmp(args[0], "cd") == 0) {
-        if (args[1] == NULL) {
-            change_dir("/home");
+        if (args[1] != NULL) {
+            change_dir(args[1]);
         }
-        else if (strchr(args[1],'|') == NULL) {
-            if (args[1] != NULL) {
-                change_dir(args[1]);
+        else {
+            char curr_dir[MAX_CMD_LEN];
+            if (getcwd(curr_dir, sizeof(curr_dir)) != NULL) {
+                printf("%s\n", curr_dir);
+            }
+            else {
+                perror("getcwd failed");
             }
         }
         return outputFd;
@@ -115,12 +131,8 @@ int exec_cmd(char *command, int inputFd, bool next) {
 
 int main() {
     char command[MAX_CMD_LEN];
-    char pwd[1024];
 
     while (true) {
-        getcwd(pwd, sizeof(pwd));
-
-        printf("%s >> ", pwd);
         if (fgets(command, MAX_CMD_LEN, stdin) == NULL) {
             break;
         }
@@ -131,12 +143,16 @@ int main() {
 
         tokeniseCommands(command, commands);
 
+        if (pipes > 0) {
+            removeCD(commands, cmds);
+        }
+        
         int prevFd = -1;
         for (int i = 0; i < cmds; i++) {
             bool next = (i < cmds - 1);
             prevFd = exec_cmd(commands[i], prevFd, next);
         }
-
+        
         free(commands);
     }
 
