@@ -39,7 +39,7 @@ void removeCD(char **commands, int *cmds){
         while (*cmd == ' ' || *cmd == '\t') {
             cmd++;
         }
-        if (strcmp(cmd, "cd") == 0) {
+        if (strncmp(cmd, "cd", 2) == 0 && (cmd[2] == '\0' || cmd[2] == ' ' || cmd[2] == '\t' || cmd[2] == '.' || cmd[2] == '/')) {
             for (int j = i; j < *cmds - 1; j++) {
                 commands[j] = commands[j + 1];
             }
