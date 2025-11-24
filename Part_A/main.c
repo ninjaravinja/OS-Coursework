@@ -33,13 +33,17 @@ void tokeniseCommands(char *command, char **commands) {
     }
 }
 
-void removeCD(char **commands, int cmds){
-    for (int i = 0; i < cmds; i++) {
-        if (strcmp(commands[i], "cd") == 0) {
-            for (int j = i; j < cmds - 1; j++) {
+void removeCD(char **commands, int *cmds){
+    for (int i = 0; i < *cmds; i++) {
+        char *cmd = commands[i];
+        while (*cmd == ' ' || *cmd == '\t') {
+            cmd++;
+        }
+        if (strcmp(cmd, "cd") == 0) {
+            for (int j = i; j < *cmds - 1; j++) {
                 commands[j] = commands[j + 1];
             }
-            cmds--;
+            (*cmds)--;
             break;
         }
     }
@@ -144,7 +148,7 @@ int main() {
         tokeniseCommands(command, commands);
 
         if (pipes > 0) {
-            removeCD(commands, cmds);
+            removeCD(commands, &cmds);
         }
         
         int prevFd = -1;
