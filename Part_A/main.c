@@ -33,10 +33,21 @@ void tokeniseCommands(char *command, char **commands) {
     }
 }
 
-void exec_cmd(char *command) {
+int exec_cmd(char *command, int inputFd, bool next) {
     char *args[MAX_CMD_LEN/2 + 1];
     pid_t pid;
     int status;
+
+    int pipeFd[2];
+    int outputFd = -1;
+
+    if (next) {
+        if (pipe(pipeFd) == -1) {
+            perror("failed to pipe");
+            return -1;
+        }
+        outputFd = pipeFd[0];
+    }
 
     char *token = strtok(command, " \n");
     int i = 0;
@@ -64,25 +75,45 @@ void exec_cmd(char *command) {
                 perror("getcwd failed");
             }
         }
-        return;
+        return outputFd;
     }
 
     pid = fork();
 
     if (pid == -1) {
         perror("fork failed");
-        return;
+        return outputFd;
     }
 
+
     if (pid == 0) {
+        if (inputFd != -1) {
+            dup2(inputFd, STDIN_FILENO);
+            close(inputFd);
+        }
+
+        if (next) {
+            dup2(pipeFd[1], STDOUT_FILENO);
+            close(pipeFd[0]);
+            close(pipeFd[1]);
+        }
+
         if (execvp(args[0], args) == -1) {
             perror("exec failed");
             exit(1);
         }
     }
     else {
+        if (inputFd != -1) {
+            close(inputFd);
+        }
+        if (next) {
+            close(pipeFd[1]);
+        }
         waitpid(pid, &status, 0);
     }
+
+    return outputFd;
 }
 
 //Plan: Split command through | and store in a list of commands. Iterate through list using a for loop and execute each command.
@@ -102,8 +133,10 @@ int main() {
 
         tokeniseCommands(command, commands);
         
+        int prevFd = -1;
         for (int i = 0; i < cmds; i++) {
-            exec_cmd(commands[i]);
+            bool next = (i < cmds - 1);
+            prevFd = exec_cmd(commands[i], prevFd, next);
         }
         
         free(commands);
