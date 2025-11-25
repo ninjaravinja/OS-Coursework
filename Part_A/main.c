@@ -6,6 +6,8 @@
 #include <sys/wait.h>
 
 #define MAX_CMD_LEN 1024
+#define COLOUR_RESET "\x1b[0m"
+#define COLOUR_BLUE "\x1b[36m"
 
 void change_dir(char *path) {
     if (chdir(path) != 0) {
@@ -79,16 +81,12 @@ int exec_cmd(char *command, int inputFd, bool next) {
     }
 
     if (args[0] != NULL && strcmp(args[0], "cd") == 0) {
-        if (args[1] != NULL) {
-            change_dir(args[1]);
+        if (args[1] == NULL) {
+            change_dir("/home");
         }
-        else {
-            char curr_dir[MAX_CMD_LEN];
-            if (getcwd(curr_dir, sizeof(curr_dir)) != NULL) {
-                printf("%s\n", curr_dir);
-            }
-            else {
-                perror("getcwd failed");
+        else if (strchr(args[1], '|') == NULL) {
+            if (args[1] != NULL) {
+                change_dir(args[1]);
             }
         }
         return outputFd;
@@ -135,8 +133,12 @@ int exec_cmd(char *command, int inputFd, bool next) {
 
 int main() {
     char command[MAX_CMD_LEN];
+    char pwd[MAX_CMD_LEN];
 
     while (true) {
+        getcwd(pwd, sizeof(pwd));
+        printf("%s%s%s >> ", COLOUR_BLUE, pwd, COLOUR_RESET);
+
         if (fgets(command, MAX_CMD_LEN, stdin) == NULL) {
             break;
         }
