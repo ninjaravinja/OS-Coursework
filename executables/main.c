@@ -19,43 +19,66 @@ static int sortNames(const void *a, const void *b) {
 	return strcmp(*left, *right);
 }
 
+void handle_path(char path[]) {
+	printf("\n\nCurrent directory: %s\n", path);
 
-int main(int arg_count, char *path[]) {
-	for (int i = 1; i < arg_count; i++) {
-		printf("Current directory: %s\n", path[i]);
+	DIR *dir = opendir(path);
 
-		DIR *dir = opendir(path[i]);
+	struct dirent *entry;
+	struct stat file_stat;
+	char **names = NULL;
+	int counter = 0;
 
-		struct dirent *entry;
-		struct stat file_stat;
-		char **names = NULL;
-		int counter = 0;
+	while ((entry = readdir(dir)) != NULL) {
+		char full_path[1024];
+		strcpy(full_path, path);
+		strcat(full_path, "/");
+		strcat(full_path, entry->d_name);
 
-		while ((entry = readdir(dir)) != NULL) {
-			char full_path[1024];
-			strcpy(full_path, path[i]);
-			strcat(full_path, "/");
-			strcat(full_path, entry->d_name);
-
-			if (stat(full_path, &file_stat) == 0) {
-				if (S_ISREG(file_stat.st_mode) && (file_stat.st_mode & S_IXUSR)) {
-					names = dynamicArray(names, &counter, entry->d_name);
-				}
+		if (stat(full_path, &file_stat) == 0) {
+			if (S_ISREG(file_stat.st_mode) && (file_stat.st_mode & S_IXUSR)) {
+				names = dynamicArray(names, &counter, entry->d_name);
 			}
 		}
+	}
 
-		if (counter > 1) {
-			qsort(names, counter, sizeof(char *), sortNames);
+	if (counter > 1) {
+		qsort(names, counter, sizeof(char *), sortNames);
+	}
+
+	for (int j = 0; j < counter; j++) {
+		printf("%s\n", names[j]);
+		free(names[j]);
+	}
+	free(names);
+
+	closedir(dir);
+}
+
+int main(int arg_count, char *path[]) {
+	if (arg_count == 1) {
+		printf("No arguments given");
+		return 0;
+	}
+
+	if (strchr(path[1], ':') != NULL) {
+		char *paths[32];
+		int j = 0;
+
+		char *token = strtok(path[1], ":");
+		while (token != NULL) {
+			paths[j++] = token;
+			token = strtok(NULL, ":");
 		}
 
-		for (int j = 0; j < counter; j++) {
-			printf("%s\n", names[j]);
-			free(names[j]);
+		for (int i = 0; i < j - 1; i++) {
+			handle_path(paths[i]);
 		}
-		free(names);
-
-		closedir(dir);
+	}
+	else {
+		for (int i = 1; i < arg_count; i++) {
+			handle_path(path[i]);
+		}
 	}
 	return 0;
 }
-
