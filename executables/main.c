@@ -4,6 +4,7 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include <unistd.h>
+#include <errno.h>
 
 
 static char **dynamicArray(char **array, int *counter, const char *word) {
@@ -24,33 +25,41 @@ void handle_path(char path[]) {
 
 	DIR *dir = opendir(path);
 
-	struct dirent *entry;
-	struct stat file_stat;
-	char **names = NULL;
-	int counter = 0;
+	if (dir) {
+		struct dirent *entry;
+		struct stat file_stat;
+		char **names = NULL;
+		int counter = 0;
 
-	while ((entry = readdir(dir)) != NULL) {
-		char full_path[1024];
-		strcpy(full_path, path);
-		strcat(full_path, "/");
-		strcat(full_path, entry->d_name);
+		while ((entry = readdir(dir)) != NULL) {
+			char full_path[1024];
+			strcpy(full_path, path);
+			strcat(full_path, "/");
+			strcat(full_path, entry->d_name);
 
-		if (stat(full_path, &file_stat) == 0) {
-			if (S_ISREG(file_stat.st_mode) && (file_stat.st_mode & S_IXUSR)) {
-				names = dynamicArray(names, &counter, entry->d_name);
+			if (stat(full_path, &file_stat) == 0) {
+				if (S_ISREG(file_stat.st_mode) && (file_stat.st_mode & S_IXUSR)) {
+					names = dynamicArray(names, &counter, entry->d_name);
+				}
 			}
 		}
-	}
 
-	if (counter > 1) {
-		qsort(names, counter, sizeof(char *), sortNames);
-	}
+		if (counter > 1) {
+			qsort(names, counter, sizeof(char *), sortNames);
+		}
 
-	for (int j = 0; j < counter; j++) {
-		printf("%s\n", names[j]);
-		free(names[j]);
+		for (int j = 0; j < counter; j++) {
+			printf("%s\n", names[j]);
+			free(names[j]);
+		}
+		free(names);
 	}
-	free(names);
+	else if (ENOENT == errno) {
+		printf("Directory does not exist");
+	}
+	else {
+		printf("Failed for another reason");
+	}
 
 	closedir(dir);
 }
