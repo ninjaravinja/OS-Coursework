@@ -55,10 +55,10 @@ void handle_path(char path[]) {
 		free(names);
 	}
 	else if (ENOENT == errno) {
-		printf("Directory does not exist");
+		perror("Directory does not exist");
 	}
 	else {
-		printf("Failed for another reason");
+		perror("Failed for some other reason");
 	}
 
 	closedir(dir);
