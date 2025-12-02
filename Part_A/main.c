@@ -133,11 +133,11 @@ int exec_cmd(char *command, int inputFd, bool next) {
 
 int main() {
     char command[MAX_CMD_LEN];
-    char pwd[MAX_CMD_LEN];
+    char cwd[MAX_CMD_LEN];
 
     while (true) {
-        getcwd(pwd, sizeof(pwd));
-        printf("%s%s%s >> ", COLOUR_BLUE, pwd, COLOUR_RESET);
+        getcwd(cwd, sizeof(cwd));
+        printf("%s%s%s >> ", COLOUR_BLUE, cwd, COLOUR_RESET);
 
         if (fgets(command, MAX_CMD_LEN, stdin) == NULL) {
             break;
